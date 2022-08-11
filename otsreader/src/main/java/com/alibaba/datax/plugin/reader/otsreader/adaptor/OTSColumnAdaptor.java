@@ -2,10 +2,10 @@ package com.alibaba.datax.plugin.reader.otsreader.adaptor;
 
 import java.lang.reflect.Type;
 
+import com.alicloud.openservices.tablestore.model.ColumnType;
 import org.apache.commons.codec.binary.Base64;
 
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSColumn;
-import com.aliyun.openservices.ots.model.ColumnType;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;

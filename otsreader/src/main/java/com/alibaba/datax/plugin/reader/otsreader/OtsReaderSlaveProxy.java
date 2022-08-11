@@ -1,7 +1,11 @@
 package com.alibaba.datax.plugin.reader.otsreader;
 
 import java.util.List;
+import java.util.concurrent.Future;
 
+import com.alicloud.openservices.tablestore.AsyncClient;
+import com.alicloud.openservices.tablestore.ClientConfiguration;
+import com.alicloud.openservices.tablestore.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,23 +21,14 @@ import com.alibaba.datax.plugin.reader.otsreader.utils.Common;
 import com.alibaba.datax.plugin.reader.otsreader.utils.GsonParser;
 import com.alibaba.datax.plugin.reader.otsreader.utils.DefaultNoRetry;
 import com.alibaba.datax.plugin.reader.otsreader.utils.RetryHelper;
-import com.aliyun.openservices.ots.OTSClientAsync;
-import com.aliyun.openservices.ots.OTSServiceConfiguration;
-import com.aliyun.openservices.ots.model.Direction;
-import com.aliyun.openservices.ots.model.GetRangeRequest;
-import com.aliyun.openservices.ots.model.GetRangeResult;
-import com.aliyun.openservices.ots.model.OTSFuture;
-import com.aliyun.openservices.ots.model.RangeRowQueryCriteria;
-import com.aliyun.openservices.ots.model.Row;
-import com.aliyun.openservices.ots.model.RowPrimaryKey;
 
 public class OtsReaderSlaveProxy {
     
     class RequestItem {
         private RangeRowQueryCriteria criteria;
-        private OTSFuture<GetRangeResult> future;
+        private Future<GetRangeResponse> future;
         
-        RequestItem(RangeRowQueryCriteria criteria, OTSFuture<GetRangeResult> future) {
+        RequestItem(RangeRowQueryCriteria criteria, Future<GetRangeResponse> future) {
             this.criteria = criteria;
             this.future = future;
         }
@@ -42,7 +37,7 @@ public class OtsReaderSlaveProxy {
             return criteria;
         }
 
-        public OTSFuture<GetRangeResult> getFuture() {
+        public Future<GetRangeResponse> getFuture() {
             return future;
         }
     }
@@ -60,28 +55,29 @@ public class OtsReaderSlaveProxy {
         }
     }
     
-    private RangeRowQueryCriteria generateRangeRowQueryCriteria(String tableName, RowPrimaryKey begin, RowPrimaryKey end, Direction direction, List<String> columns) {
+    private RangeRowQueryCriteria generateRangeRowQueryCriteria(String tableName, PrimaryKey begin, PrimaryKey end, Direction direction, List<String> columns) {
         RangeRowQueryCriteria criteria = new RangeRowQueryCriteria(tableName);
         criteria.setInclusiveStartPrimaryKey(begin);
         criteria.setDirection(direction);
-        criteria.setColumnsToGet(columns);
-        criteria.setLimit(-1);
+        criteria.setMaxVersions(Integer.MAX_VALUE);
+        // criteria.setcolumns(columns);
+        criteria.setLimit(1);
         criteria.setExclusiveEndPrimaryKey(end);
         return criteria;
     }
     
     private RequestItem generateRequestItem(
-            OTSClientAsync ots, 
+            AsyncClient ots,
             OTSConf conf, 
-            RowPrimaryKey begin, 
-            RowPrimaryKey end, 
+            PrimaryKey begin,
+            PrimaryKey end,
             Direction direction, 
             List<String> columns) throws Exception {
         RangeRowQueryCriteria criteria = generateRangeRowQueryCriteria(conf.getTableName(), begin, end, direction, columns);
-        
+        criteria.setMaxVersions(1);
         GetRangeRequest request = new GetRangeRequest();
         request.setRangeRowQueryCriteria(criteria);
-        OTSFuture<GetRangeResult> future =  ots.getRange(request);
+        Future<GetRangeResponse> future =  ots.getRange(request, null);
         
         return new RequestItem(criteria, future);
     }
@@ -92,20 +88,18 @@ public class OtsReaderSlaveProxy {
         OTSConf conf = GsonParser.jsonToConf(configuration.getString(OTSConst.OTS_CONF));
         OTSRange range = GsonParser.jsonToRange(configuration.getString(OTSConst.OTS_RANGE));
         Direction direction = GsonParser.jsonToDirection(configuration.getString(OTSConst.OTS_DIRECTION));
-        
-        OTSServiceConfiguration configure = new OTSServiceConfiguration();
+
+        ClientConfiguration configure = new ClientConfiguration();
         configure.setRetryStrategy(new DefaultNoRetry());
-        
-        OTSClientAsync ots = new OTSClientAsync(
+
+        AsyncClient ots = new AsyncClient(
                 conf.getEndpoint(),
                 conf.getAccessId(),
                 conf.getAccesskey(),
                 conf.getInstanceName(),
-                null,
-                configure,
-                null);
+                configure);
         
-        RowPrimaryKey token = range.getBegin();
+        PrimaryKey token = range.getBegin();
         List<String> columns = Common.getNormalColumnNameList(conf.getColumns());
         
         RequestItem request = null;
@@ -117,7 +111,7 @@ public class OtsReaderSlaveProxy {
             } else {
                 RequestItem req = request;
 
-                GetRangeResult result = RetryHelper.executeWithRetry(
+                GetRangeResponse result = RetryHelper.executeWithRetry(
                         new GetRangeCallable(ots, req.getCriteria(), req.getFuture()),
                         conf.getRetry(),
                         conf.getSleepInMilliSecond()

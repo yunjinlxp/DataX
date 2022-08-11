@@ -89,7 +89,7 @@ public class OTSHelper {
         rangeRowQueryCriteria.setInclusiveStartPrimaryKey(new PrimaryKey(startPkCols));
         rangeRowQueryCriteria.setExclusiveEndPrimaryKey(new PrimaryKey(endPkCols));
         rangeRowQueryCriteria.setLimit(1);
-        rangeRowQueryCriteria.setMaxVersions(1);
+        rangeRowQueryCriteria.setMaxVersions(Integer.MAX_VALUE);
 
         long startTime = System.currentTimeMillis();
 

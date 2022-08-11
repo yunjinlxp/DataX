@@ -4,12 +4,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import com.alicloud.openservices.tablestore.ClientException;
+import com.alicloud.openservices.tablestore.TableStoreException;
+import com.alicloud.openservices.tablestore.core.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.aliyun.openservices.ots.ClientException;
-import com.aliyun.openservices.ots.OTSErrorCode;
-import com.aliyun.openservices.ots.OTSException;
 
 public class RetryHelper {
     
@@ -39,15 +39,15 @@ public class RetryHelper {
     
     private static Set<String> prepareNoRetryErrorCode() {
         Set<String> pool = new HashSet<String>();
-        pool.add(OTSErrorCode.AUTHORIZATION_FAILURE);
-        pool.add(OTSErrorCode.INVALID_PARAMETER);
-        pool.add(OTSErrorCode.REQUEST_TOO_LARGE);
-        pool.add(OTSErrorCode.OBJECT_NOT_EXIST);
-        pool.add(OTSErrorCode.OBJECT_ALREADY_EXIST);
-        pool.add(OTSErrorCode.INVALID_PK);
-        pool.add(OTSErrorCode.OUT_OF_COLUMN_COUNT_LIMIT);
-        pool.add(OTSErrorCode.OUT_OF_ROW_SIZE_LIMIT);
-        pool.add(OTSErrorCode.CONDITION_CHECK_FAIL);
+        pool.add(ErrorCode.AUTHORIZATION_FAILURE);
+        pool.add(ErrorCode.INVALID_PARAMETER);
+        pool.add(ErrorCode.REQUEST_TOO_LARGE);
+        pool.add(ErrorCode.OBJECT_NOT_EXIST);
+        pool.add(ErrorCode.OBJECT_ALREADY_EXIST);
+        pool.add(ErrorCode.INVALID_PK);
+        pool.add(ErrorCode.OUT_OF_COLUMN_COUNT_LIMIT);
+        pool.add(ErrorCode.OUT_OF_ROW_SIZE_LIMIT);
+        pool.add(ErrorCode.CONDITION_CHECK_FAIL);
         return pool;
     }
     
@@ -60,21 +60,19 @@ public class RetryHelper {
     }
     
     public static boolean canRetry(Exception exception) {
-        OTSException e = null;
-        if (exception instanceof OTSException) {
-            e = (OTSException) exception;
+        TableStoreException e = null;
+        if (exception instanceof TableStoreException) {
+            e = (TableStoreException) exception;
             LOG.warn(
-                    "OTSException:ErrorCode:{}, ErrorMsg:{}, RequestId:{}", 
-                    new Object[]{e.getErrorCode(), e.getMessage(), e.getRequestId()}
-                    );
+                    "OTSException:ErrorCode:{}, ErrorMsg:{}, RequestId:{}",
+                    e.getErrorCode(), e.getMessage(), e.getRequestId());
             return canRetry(e.getErrorCode());
 
         } else if (exception instanceof ClientException) {
             ClientException ce = (ClientException) exception;
             LOG.warn(
-                    "ClientException:{}, ErrorMsg:{}", 
-                    new Object[]{ce.getErrorCode(), ce.getMessage()}
-                    );
+                    "ClientException:{}, ErrorMsg:{}",
+                    "UnKnown", ce.getMessage());
             return true;
         } else {
             return false;

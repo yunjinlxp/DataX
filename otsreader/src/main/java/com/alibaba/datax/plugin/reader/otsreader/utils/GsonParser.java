@@ -5,10 +5,10 @@ import com.alibaba.datax.plugin.reader.otsreader.adaptor.PrimaryKeyValueAdaptor;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSColumn;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSConf;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSRange;
-import com.aliyun.openservices.ots.model.Direction;
-import com.aliyun.openservices.ots.model.PrimaryKeyValue;
-import com.aliyun.openservices.ots.model.RowPrimaryKey;
-import com.aliyun.openservices.ots.model.TableMeta;
+import com.alicloud.openservices.tablestore.model.Direction;
+import com.alicloud.openservices.tablestore.model.PrimaryKey;
+import com.alicloud.openservices.tablestore.model.PrimaryKeyValue;
+import com.alicloud.openservices.tablestore.model.TableMeta;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -56,7 +56,7 @@ public class GsonParser {
         return g.toJson(meta);
     }
     
-    public static String rowPrimaryKeyToJson (RowPrimaryKey row) {
+    public static String rowPrimaryKeyToJson (PrimaryKey row) {
         Gson g = gsonBuilder();
         return g.toJson(row);
     }

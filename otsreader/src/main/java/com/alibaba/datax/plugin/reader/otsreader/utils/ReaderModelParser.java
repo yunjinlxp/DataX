@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.alicloud.openservices.tablestore.model.PrimaryKeyValue;
 import org.apache.commons.codec.binary.Base64;
 
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSColumn;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSConst;
-import com.aliyun.openservices.ots.model.PrimaryKeyValue;
 
 /**
  * 主要对OTS PrimaryKey，OTSColumn的解析

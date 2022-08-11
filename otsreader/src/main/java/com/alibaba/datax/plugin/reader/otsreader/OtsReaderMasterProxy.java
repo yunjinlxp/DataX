@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.alicloud.openservices.tablestore.InternalClient;
+import com.alicloud.openservices.tablestore.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,12 +21,6 @@ import com.alibaba.datax.plugin.reader.otsreader.utils.GsonParser;
 import com.alibaba.datax.plugin.reader.otsreader.utils.ReaderModelParser;
 import com.alibaba.datax.plugin.reader.otsreader.utils.RangeSplit;
 import com.alibaba.datax.plugin.reader.otsreader.utils.RetryHelper;
-import com.aliyun.openservices.ots.OTSClient;
-import com.aliyun.openservices.ots.model.Direction;
-import com.aliyun.openservices.ots.model.PrimaryKeyValue;
-import com.aliyun.openservices.ots.model.RangeRowQueryCriteria;
-import com.aliyun.openservices.ots.model.RowPrimaryKey;
-import com.aliyun.openservices.ots.model.TableMeta;
 
 public class OtsReaderMasterProxy {
 
@@ -32,7 +28,7 @@ public class OtsReaderMasterProxy {
 
     private OTSRange range = null;
 
-    private OTSClient ots = null;
+    private InternalClient ots = null;
 
     private TableMeta meta = null;
 
@@ -67,7 +63,7 @@ public class OtsReaderMasterProxy {
         conf.setInstanceName(ParamChecker.checkStringAndGet(param, Key.OTS_INSTANCE_NAME)); 
         conf.setTableName(ParamChecker.checkStringAndGet(param, Key.TABLE_NAME)); 
         
-        ots = new OTSClient(
+        ots = new InternalClient(
                 this.conf.getEndpoint(),
                 this.conf.getAccessId(),
                 this.conf.getAccesskey(),
@@ -136,7 +132,7 @@ public class OtsReaderMasterProxy {
 
     // private function
 
-    private TableMeta getTableMeta(OTSClient ots, String tableName) throws Exception {
+    private TableMeta getTableMeta(InternalClient ots, String tableName) throws Exception {
         return RetryHelper.executeWithRetry(
                 new GetTableMetaCallable(ots, tableName),
                 conf.getRetry(),
@@ -144,14 +140,14 @@ public class OtsReaderMasterProxy {
                 );
     }
 
-    private RowPrimaryKey getPKOfFirstRow(
+    private PrimaryKey getPKOfFirstRow(
             OTSRange range , Direction direction) throws Exception {
 
         RangeRowQueryCriteria cur = new RangeRowQueryCriteria(this.conf.getTableName());
         cur.setInclusiveStartPrimaryKey(range.getBegin());
         cur.setExclusiveEndPrimaryKey(range.getEnd());
         cur.setLimit(1);
-        cur.setColumnsToGet(Common.getPrimaryKeyNameList(meta));
+        cur.setMaxVersions(Integer.MAX_VALUE);
         cur.setDirection(direction);
 
         return RetryHelper.executeWithRetry(
@@ -161,7 +157,7 @@ public class OtsReaderMasterProxy {
                 );
     }
 
-    private List<OTSRange> defaultRangeSplit(OTSClient ots, TableMeta meta, OTSRange range, int num) throws Exception {
+    private List<OTSRange> defaultRangeSplit(InternalClient ots, TableMeta meta, OTSRange range, int num) throws Exception {
         if (num == 1) {
             List<OTSRange> ranges = new ArrayList<OTSRange>();
             ranges.add(range);
@@ -173,9 +169,8 @@ public class OtsReaderMasterProxy {
         reverseRange.setEnd(range.getBegin());
 
         Direction reverseDirection = (direction == Direction.FORWARD ? Direction.BACKWARD : Direction.FORWARD);
-
-        RowPrimaryKey realBegin = getPKOfFirstRow(range, direction);
-        RowPrimaryKey realEnd   = getPKOfFirstRow(reverseRange, reverseDirection);
+        PrimaryKey realBegin = getPKOfFirstRow(range, direction);
+        PrimaryKey realEnd   = getPKOfFirstRow(reverseRange, reverseDirection);
         
         // 因为如果其中一行为空，表示这个范围内至多有一行数据
         // 所以不再细分，直接使用用户定义的范围

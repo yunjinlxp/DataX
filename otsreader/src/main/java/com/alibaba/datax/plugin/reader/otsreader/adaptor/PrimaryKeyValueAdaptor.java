@@ -2,9 +2,9 @@ package com.alibaba.datax.plugin.reader.otsreader.adaptor;
 
 import java.lang.reflect.Type;
 
-import com.aliyun.openservices.ots.model.ColumnType;
-import com.aliyun.openservices.ots.model.PrimaryKeyType;
-import com.aliyun.openservices.ots.model.PrimaryKeyValue;
+import com.alicloud.openservices.tablestore.model.DefinedColumnType;
+import com.alicloud.openservices.tablestore.model.PrimaryKeyType;
+import com.alicloud.openservices.tablestore.model.PrimaryKeyValue;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -28,7 +28,7 @@ public class PrimaryKeyValueAdaptor implements JsonDeserializer<PrimaryKeyValue>
 
     @Override
     public JsonElement serialize(PrimaryKeyValue obj, Type t,
-            JsonSerializationContext c) {
+                                 JsonSerializationContext c) {
         JsonObject json = new JsonObject();
         
         if (obj == PrimaryKeyValue.INF_MIN) {
@@ -45,11 +45,11 @@ public class PrimaryKeyValueAdaptor implements JsonDeserializer<PrimaryKeyValue>
 
         switch (obj.getType()) {
         case STRING : 
-            json.add(TYPE, new JsonPrimitive(ColumnType.STRING.toString())); 
+            json.add(TYPE, new JsonPrimitive(DefinedColumnType.STRING.toString()));
             json.add(VALUE, new JsonPrimitive(obj.asString()));
             break;
         case INTEGER : 
-            json.add(TYPE, new JsonPrimitive(ColumnType.INTEGER.toString())); 
+            json.add(TYPE, new JsonPrimitive(DefinedColumnType.INTEGER.toString()));
             json.add(VALUE, new JsonPrimitive(obj.asLong()));
             break;
         default:

@@ -5,16 +5,10 @@ import java.util.List;
 
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.plugin.writer.otswriter.model.*;
 import com.aliyun.openservices.ots.ClientException;
 import com.aliyun.openservices.ots.OTSException;
-import com.aliyun.openservices.ots.model.ColumnValue;
-import com.aliyun.openservices.ots.model.PrimaryKeyValue;
-import com.aliyun.openservices.ots.model.RowChange;
-import com.aliyun.openservices.ots.model.RowPrimaryKey;
-import com.aliyun.openservices.ots.model.RowPutChange;
-import com.aliyun.openservices.ots.model.RowUpdateChange;
+import com.aliyun.openservices.ots.model.*;
 import org.apache.commons.math3.util.Pair;
 
 public class Common {
@@ -44,7 +38,6 @@ public class Common {
             if (col.getRawData() == null) {
                 throw new IllegalArgumentException(String.format(OTSErrorMessage.PK_COLUMN_VALUE_IS_NULL_ERROR, expect.getName()));
             }
-
             PrimaryKeyValue pk = ColumnConversion.columnToPrimaryKeyValue(col, expect);
             primaryKey.addPrimaryKeyColumn(expect.getName(), pk);
         }

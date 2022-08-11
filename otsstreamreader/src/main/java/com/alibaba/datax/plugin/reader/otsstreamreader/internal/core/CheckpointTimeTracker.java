@@ -114,7 +114,7 @@ public class CheckpointTimeTracker {
         PrimaryKey startPk = getPrimaryKeyForShardTimeCheckpoint(shardId, endTimestamp);
         PrimaryKey endPk = getPrimaryKeyForShardTimeCheckpoint(shardId, startTimestamp);
         RangeRowQueryCriteria rangeRowQueryCriteria = new RangeRowQueryCriteria(statusTable);
-        rangeRowQueryCriteria.setMaxVersions(1);
+        rangeRowQueryCriteria.setMaxVersions(Integer.MAX_VALUE);
         rangeRowQueryCriteria.setDirection(Direction.BACKWARD);
         rangeRowQueryCriteria.setLimit(1);
         rangeRowQueryCriteria.setInclusiveStartPrimaryKey(startPk);
@@ -220,7 +220,7 @@ public class CheckpointTimeTracker {
 
         PrimaryKey startPk = getPrimaryKeyForCheckpoint(timestamp, "");
         PrimaryKey endPk = getPrimaryKeyForCheckpoint(timestamp, StatusTableConstants.LARGEST_SHARD_ID);
-        param.setMaxVersions(1);
+        param.setMaxVersions(Integer.MAX_VALUE);
         param.setInclusiveStartPrimaryKey(startPk);
         param.setExclusiveEndPrimaryKey(endPk);
 
