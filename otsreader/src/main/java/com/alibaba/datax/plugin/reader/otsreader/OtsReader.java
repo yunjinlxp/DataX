@@ -13,7 +13,7 @@ import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.otsreader.utils.Common;
 
-public class OtsReader extends Reader {
+public class    OtsReader extends Reader {
 
     public static class Job extends Reader.Job {
         private static final Logger LOG = LoggerFactory.getLogger(Job.class);

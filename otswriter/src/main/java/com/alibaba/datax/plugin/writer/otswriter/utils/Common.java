@@ -6,20 +6,20 @@ import java.util.List;
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.plugin.writer.otswriter.model.*;
-import com.aliyun.openservices.ots.ClientException;
-import com.aliyun.openservices.ots.OTSException;
-import com.aliyun.openservices.ots.model.*;
+import com.alicloud.openservices.tablestore.ClientException;
+import com.alicloud.openservices.tablestore.TableStoreException;
+import com.alicloud.openservices.tablestore.model.*;
 import org.apache.commons.math3.util.Pair;
 
 public class Common {
 
     public static String getDetailMessage(Exception exception) {
-        if (exception instanceof OTSException) {
-            OTSException e = (OTSException) exception;
+        if (exception instanceof TableStoreException) {
+            TableStoreException e = (TableStoreException) exception;
             return "OTSException[ErrorCode:" + e.getErrorCode() + ", ErrorMessage:" + e.getMessage() + ", RequestId:" + e.getRequestId() + "]";
         } else if (exception instanceof ClientException) {
             ClientException e = (ClientException) exception;
-            return "ClientException[ErrorCode:" + e.getErrorCode() + ", ErrorMessage:" + e.getMessage() + "]";
+            return "ClientException[ErrorCode:" + "Unknown" + ", ErrorMessage:" + e.getMessage() + "]";
         } else if (exception instanceof IllegalArgumentException) {
             IllegalArgumentException e = (IllegalArgumentException) exception;
             return "IllegalArgumentException[ErrorMessage:" + e.getMessage() + "]";
@@ -28,9 +28,9 @@ public class Common {
         }
     }
 
-    public static RowPrimaryKey getPKFromRecord(List<OTSPKColumn> pkColumns, Record r) {
-        RowPrimaryKey primaryKey = new RowPrimaryKey();
+    public static PrimaryKey getPKFromRecord(List<OTSPKColumn> pkColumns, Record r) {
         int pkCount = pkColumns.size();
+        List<PrimaryKeyColumn> primaryKeys = new ArrayList<>();
         for (int i = 0; i < pkCount; i++) {
             Column col = r.getColumn(i);
             OTSPKColumn expect = pkColumns.get(i);
@@ -39,8 +39,9 @@ public class Common {
                 throw new IllegalArgumentException(String.format(OTSErrorMessage.PK_COLUMN_VALUE_IS_NULL_ERROR, expect.getName()));
             }
             PrimaryKeyValue pk = ColumnConversion.columnToPrimaryKeyValue(col, expect);
-            primaryKey.addPrimaryKeyColumn(expect.getName(), pk);
+            primaryKeys.add(new PrimaryKeyColumn(expect.getName(), pk));
         }
+        PrimaryKey primaryKey = new PrimaryKey(primaryKeys);
         return primaryKey;
     }
 
@@ -61,7 +62,7 @@ public class Common {
         return attr;
     }
 
-    public static RowChange columnValuesToRowChange(String tableName, OTSOpType type, RowPrimaryKey pk, List<Pair<String, ColumnValue>> values) {
+    public static RowChange columnValuesToRowChange(String tableName, OTSOpType type, PrimaryKey pk, List<Pair<String, ColumnValue>> values) {
         switch (type) {
             case PUT_ROW:
                 RowPutChangeWithRecord rowPutChange = new RowPutChangeWithRecord(tableName);
@@ -69,8 +70,8 @@ public class Common {
 
                 for (Pair<String, ColumnValue> en : values) {
                     if (en.getValue() != null) {
-                        rowPutChange.addAttributeColumn(en.getKey(), en.getValue());
-                    } 
+                        rowPutChange.addColumn(en.getKey(), en.getValue());
+                    }
                 }
 
                 return rowPutChange;
@@ -80,9 +81,9 @@ public class Common {
 
                 for (Pair<String, ColumnValue> en : values) {
                     if (en.getValue() != null) {
-                        rowUpdateChange.addAttributeColumn(en.getKey(), en.getValue());
+                        rowUpdateChange.put(en.getKey(), en.getValue());
                     } else {
-                        rowUpdateChange.deleteAttributeColumn(en.getKey());
+                        rowUpdateChange.deleteColumns(en.getKey());
                     }
                 }
                 return rowUpdateChange;

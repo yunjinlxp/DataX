@@ -1,10 +1,9 @@
 package com.alibaba.datax.plugin.writer.otswriter.model;
 
+import com.alicloud.openservices.tablestore.TableStoreException;
+import com.alicloud.openservices.tablestore.core.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.aliyun.openservices.ots.OTSErrorCode;
-import com.aliyun.openservices.ots.OTSException;
 
 /**
  * 添加这个类的主要目的是为了解决当用户遇到CU不够时，打印大量的日志
@@ -12,12 +11,12 @@ import com.aliyun.openservices.ots.OTSException;
  *
  */
 public class LogExceptionManager {
-    
+
     private long count = 0;
     private long updateTimestamp = 0;
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(LogExceptionManager.class);
-    
+
     private synchronized void countAndReset() {
         count++;
         long cur = System.currentTimeMillis();
@@ -28,15 +27,15 @@ public class LogExceptionManager {
             updateTimestamp = cur;
         }
     }
-    
+
     public synchronized void addException(Exception exception) {
-        if (exception instanceof OTSException) {
-            OTSException e = (OTSException)exception;
-            if (e.getErrorCode().equals(OTSErrorCode.NOT_ENOUGH_CAPACITY_UNIT)) {
+        if (exception instanceof TableStoreException) {
+            TableStoreException e = (TableStoreException)exception;
+            if (e.getErrorCode().equals(ErrorCode.NOT_ENOUGH_CAPACITY_UNIT)) {
                 countAndReset();
             } else {
                 LOG.warn(
-                        "Call callable fail, OTSException:ErrorCode:{}, ErrorMsg:{}, RequestId:{}", 
+                        "Call callable fail, OTSException:ErrorCode:{}, ErrorMsg:{}, RequestId:{}",
                         new Object[]{e.getErrorCode(), e.getMessage(), e.getRequestId()}
                         );
             }
@@ -44,9 +43,9 @@ public class LogExceptionManager {
             LOG.warn("Call callable fail, {}", exception.getMessage());
         }
     }
-    
-    public synchronized void addException(com.aliyun.openservices.ots.model.Error error, String requestId) {
-        if (error.getCode().equals(OTSErrorCode.NOT_ENOUGH_CAPACITY_UNIT)) {
+
+    public synchronized void addException(com.alicloud.openservices.tablestore.model.Error error, String requestId) {
+        if (error.getCode().equals(ErrorCode.NOT_ENOUGH_CAPACITY_UNIT)) {
             countAndReset();
         } else {
             LOG.warn(
