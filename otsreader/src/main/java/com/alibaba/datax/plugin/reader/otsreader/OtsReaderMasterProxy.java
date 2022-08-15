@@ -148,6 +148,8 @@ public class OtsReaderMasterProxy {
         cur.setExclusiveEndPrimaryKey(range.getEnd());
         cur.setLimit(1);
         cur.setMaxVersions(Integer.MAX_VALUE);
+        cur.clearColumnsToGet();
+        cur.addColumnsToGet(Common.getPrimaryKeyNameList(meta));
         cur.setDirection(direction);
 
         return RetryHelper.executeWithRetry(
